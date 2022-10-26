@@ -14,6 +14,7 @@ class npy2obj:
         if self.npy_path.endswith('.npz'):
             self.motions = self.motions['arr_0']
         self.motions = self.motions[None][0]
+        self.motions['motion'] = self.motions['motion'][..., [0, 2, 1], :]
         self.rot2xyz = Rotation2xyz(device='cpu')
         self.faces = self.rot2xyz.smpl_model.faces
         self.bs, self.njoints, self.nfeats, self.nframes = self.motions['motion'].shape
@@ -74,11 +75,10 @@ class npy2obj:
         poses_rot6 = np.moveaxis(self.motions['motion'][0, :-1, :, :self.real_num_frames], -1, 0)
         poses_axisangle = np.array(
             rotation_6d_to_axis_angle(torch.tensor(poses_rot6)))
-        poses_axisangle[..., 0, :] = poses_axisangle[..., 0, [0, 2, 1]]
         poses_axisangle_flat = poses_axisangle.reshape(self.real_num_frames, -1)
         trans = np.moveaxis(
             self.motions['motion'][0, -1, :3, :self.real_num_frames], -1, 0
-        ).reshape(-1, 3)[..., [0, 2, 1]]
+        ).reshape(-1, 3)
         data_dict = {
             'gender': np.array('neutral'),
             'trans': trans,
