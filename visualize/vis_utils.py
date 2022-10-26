@@ -3,7 +3,9 @@ import numpy as np
 from trimesh import Trimesh
 import os
 import torch
+import utils.rotation_conversions as geometry
 from visualize.simplify_loc2rot import joints2smpl
+
 
 class npy2obj:
     def __init__(self, npy_path, sample_idx, rep_idx, device=0, cuda=True):
@@ -52,7 +54,7 @@ class npy2obj:
         with open(save_path, 'w') as fw:
             mesh.export(fw, 'obj')
         return save_path
-    
+
     def save_npy(self, save_path):
         data_dict = {
             'motion': self.motions['motion'][0, :, :, :self.real_num_frames],
@@ -64,3 +66,26 @@ class npy2obj:
             'length': self.real_num_frames,
         }
         np.save(save_path, data_dict)
+
+    def save_npz(self, save_path):
+        def rotation_6d_to_axis_angle(x):
+            return geometry.matrix_to_axis_angle(geometry.rotation_6d_to_matrix(x))
+
+        poses_rot6 = np.moveaxis(self.motions['motion'][0, :-1, :, :self.real_num_frames], -1, 0)
+        poses_axisangle = np.array(
+            rotation_6d_to_axis_angle(torch.tensor(poses_rot6)))
+        poses_axisangle[..., 0, :] = poses_axisangle[..., 0, [0, 2, 1]]
+        poses_axisangle_flat = poses_axisangle.reshape(self.real_num_frames, -1)
+        trans = np.moveaxis(
+            self.motions['motion'][0, -1, :3, :self.real_num_frames], -1, 0
+        ).reshape(-1, 3)[..., [0, 2, 1]]
+        data_dict = {
+            'gender': np.array('neutral'),
+            'trans': trans,
+            'mocap_framerate': 20,
+            'betas': np.zeros(10),
+            'dmpls': np.zeros((poses_axisangle.shape[0], 8)),
+            'poses': poses_axisangle_flat,
+            'text': self.motions['text'][0],
+        }
+        np.savez(save_path, **data_dict)
