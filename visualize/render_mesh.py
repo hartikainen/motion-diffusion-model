@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parsed_name = os.path.basename(params.input_path).replace('.mp4', '').replace('sample', '').replace('rep', '')
     sample_i, rep_i = [int(e) for e in parsed_name.split('_')]
     npy_path = os.path.join(os.path.dirname(params.input_path), 'results.npy')
-    out_npy_path = params.input_path.replace('.mp4', '_smpl_params.npy')
+    out_npz_path = params.input_path.replace('.mp4', '_smpl_params.npz')
     assert os.path.exists(npy_path)
     results_dir = params.input_path.replace('.mp4', '_obj')
     if os.path.exists(results_dir):
@@ -29,5 +29,5 @@ if __name__ == '__main__':
     for frame_i in tqdm(range(npy2obj.real_num_frames)):
         npy2obj.save_obj(os.path.join(results_dir, 'frame{:03d}.obj'.format(frame_i)), frame_i)
 
-    print('Saving SMPL params to [{}]'.format(os.path.abspath(out_npy_path)))
-    npy2obj.save_npy(out_npy_path)
+    print('Saving SMPL params to [{}]'.format(os.path.abspath(out_npz_path)))
+    npy2obj.save_npz(out_npz_path)
