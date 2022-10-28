@@ -6,6 +6,7 @@ numpy array. This can be used to produce samples for FID evaluation.
 from utils.fixseed import fixseed
 import os
 import numpy as np
+import pathlib
 import torch
 from utils.parser_util import sample_args
 from utils.model_util import create_model_and_diffusion, load_model_wo_clip
@@ -157,15 +158,20 @@ def main():
             caption = all_text[rep_i*args.batch_size + sample_i]
             length = all_lengths[rep_i*args.batch_size + sample_i]
             motion = all_motions[rep_i*args.batch_size + sample_i].transpose(2, 0, 1)[:length]
-            save_file = 'sample{:02d}_rep{:02d}.mp4'.format(sample_i, rep_i)
-            animation_save_path = os.path.join(out_path, save_file)
-            print(f'[({sample_i}) "{caption}" | Rep #{rep_i} | -> {save_file}]')
+            animation_save_file = 'sample{:02d}_rep{:02d}.mp4'.format(sample_i, rep_i)
+            animation_save_path = pathlib.Path(out_path) / animation_save_file
+            print(f'[({sample_i}) "{caption}" | Rep #{rep_i} | -> {animation_save_file}]')
             if args.dataset == 'kit':
                 motion *= 0.003  # scale for visualization
             elif args.dataset == 'humanml':
                 motion *= 1.3  # scale for visualization
             plot_3d_motion(animation_save_path, skeleton, motion, title=caption, fps=fps)
             # Credit for visualization: https://github.com/EricGuo5513/text-to-motion
+
+            motion_save_file = f'sample{sample_i:02d}_rep{rep_i:02d}_motion.npz'
+            motion_save_path = pathlib.Path(out_path) / motion_save_file
+            np.savez(motion_save_path, motion=motion, fps=fps, sequence_label=caption)
+
 
     abs_path = os.path.abspath(out_path)
     print(f'[Done] Results are at [{abs_path}]')
