@@ -14,7 +14,6 @@ class npy2obj:
         if self.npy_path.endswith('.npz'):
             self.motions = self.motions['arr_0']
         self.motions = self.motions[None][0]
-        self.motions['motion'] = self.motions['motion'][..., [0, 2, 1], :]
         self.rot2xyz = Rotation2xyz(device='cpu')
         self.faces = self.rot2xyz.smpl_model.faces
         self.bs, self.njoints, self.nfeats, self.nframes = self.motions['motion'].shape

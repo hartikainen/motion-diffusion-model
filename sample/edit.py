@@ -137,6 +137,8 @@ def main():
         shutil.rmtree(out_path)
     os.makedirs(out_path)
 
+    all_motions = all_motions[..., [0, 2, 1], :]
+
     npy_path = os.path.join(out_path, 'results.npy')
     print(f"saving results file to [{npy_path}]")
     np.save(npy_path,
