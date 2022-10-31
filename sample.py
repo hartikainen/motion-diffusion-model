@@ -163,10 +163,6 @@ def main():
             animation_save_file = 'sample{:02d}_rep{:02d}.mp4'.format(sample_i, rep_i)
             animation_save_path = pathlib.Path(out_path) / animation_save_file
             print(f'[({sample_i}) "{caption}" | Rep #{rep_i} | -> {animation_save_file}]')
-            if args.dataset == 'kit':
-                motion *= 0.003  # scale for visualization
-            elif args.dataset == 'humanml':
-                motion *= 1.3  # scale for visualization
             plot_3d_motion(animation_save_path, skeleton, motion, title=caption, fps=fps)
             # Credit for visualization: https://github.com/EricGuo5513/text-to-motion
 
