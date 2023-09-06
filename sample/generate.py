@@ -31,8 +31,8 @@ def main():
     is_using_data = not any([args.input_text, args.text_prompt, args.action_file, args.action_name])
     dist_util.setup_dist(args.device)
     if out_path == '':
-        out_path = os.path.join(os.path.dirname(args.model_path),
-                                'samples_{}_{}_seed{}'.format(name, niter, args.seed))
+        out_path = os.path.join(os.path.dirname(args.model_path.replace("/save/", "/samples/")),
+                                '{}_seed{}'.format(niter, args.seed))
         if args.text_prompt != '':
             out_path += '_' + args.text_prompt.replace(' ', '_').replace('.', '')
         elif args.input_text != '':
@@ -159,11 +159,20 @@ def main():
         shutil.rmtree(out_path)
     os.makedirs(out_path)
 
-    npy_path = os.path.join(out_path, 'results.npy')
+    npz_path = os.path.join(out_path, 'results.npz')
     print(f"saving results file to [{npy_path}]")
-    np.save(npy_path,
-            {'motion': all_motions, 'text': all_text, 'lengths': all_lengths,
-             'num_samples': args.num_samples, 'num_repetitions': args.num_repetitions})
+
+    hml_to_mjpc_index = [0, 15, 10, 11, 7, 8, 4, 5, 20, 21, 18, 19, 16, 17, 1, 2]
+    # all_motions = all_motions[:, hml_to_mjpc_index, ...]
+    np.savez(
+        npz_path,
+        **{
+            'motion': all_motions[:, hml_to_mjpc_index, ...],
+            'text': all_text,
+            'lengths': all_lengths,
+            'num_samples': args.num_samples,
+            'num_repetitions': args.num_repetitions,
+        })
     with open(npy_path.replace('.npy', '.txt'), 'w') as fw:
         fw.write('\n'.join(all_text))
     with open(npy_path.replace('.npy', '_len.txt'), 'w') as fw:
