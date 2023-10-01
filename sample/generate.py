@@ -5,6 +5,8 @@ numpy array. This can be used to produce samples for FID evaluation.
 """
 from utils.fixseed import fixseed
 import os
+from pathlib import Path
+import re
 import numpy as np
 import torch
 from utils.parser_util import generate_args
@@ -162,18 +164,33 @@ def main():
     npz_path = os.path.join(out_path, 'results.npz')
     print(f"saving results file to [{npz_path}]")
 
+    def caption_to_filename(text, max_length=255):
+        text = text.strip()  # Trim whitespace
+        text = re.sub(r'[^\w\s-]', '', text)  # Remove all non-alphanumeric characters except spaces, hyphens, and underscores
+        text = re.sub(r'\s+', '-', text)  # Replace sequences of spaces with single hyphen
+        text = text.lower()  # Convert to lowercase (optional)
+        assert len(text) < max_length, (len(text), text)
+        return text
+
     # hml_to_mjpc_index = [0, 15, 10, 11, 7, 8, 4, 5, 20, 21, 18, 19, 16, 17, 1, 2]
     # all_motions = all_motions[:, hml_to_mjpc_index, ...]
-    np.savez(
-        npz_path,
-        **{
-            # 'motion': all_motions[:, hml_to_mjpc_index, ...],
-            'motions': all_motions,
-            'texts': all_text,
-            'lengths': all_lengths,
-            'num_samples': args.num_samples,
-            'num_repetitions': args.num_repetitions,
-        })
+    def save_all_samples(save_path):
+        np.savez(
+            save_path,
+            **{
+                # 'motion': all_motions[:, hml_to_mjpc_index, ...],
+                'motions': all_motions,
+                'texts': all_text,
+                'lengths': all_lengths,
+                'num_samples': args.num_samples,
+                'num_repetitions': args.num_repetitions,
+            })
+
+    def save_one_sample(save_path, motion_keyframes):
+        save_path = Path(save_path)
+        assert save_path.suffix == ".npy"
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        np.save(save_path, motion_keyframes)
 
     # for motion, text, length in zip(motions, texts, lengths):
     #     motion_npz_path = os.path.join(out_path, text.replace(' ', '_').replace('.', ''))
@@ -206,6 +223,12 @@ def main():
             plot_3d_motion(animation_save_path, skeleton, motion, dataset=args.dataset, title=caption, fps=fps)
             # Credit for visualization: https://github.com/EricGuo5513/text-to-motion
             rep_files.append(animation_save_path)
+            motion_keyframes_save_path = Path(
+                out_path,
+                "results",
+                f"{caption_to_filename(caption, 255)}-sample_i={sample_i}-rep_i={rep_i}"
+            ).with_suffix(".npy")
+            save_one_sample(motion_keyframes_save_path, motion[..., [2, 0, 1]])
 
         sample_files = save_multiple_samples(args, out_path,
                                                row_print_template, all_print_template, row_file_template, all_file_template,
